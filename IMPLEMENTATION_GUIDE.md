@@ -55,8 +55,8 @@ sudo apt-get install tmux
 
 #### YAML ファイル形式の理解
 - `queue/producer_to_manager.yaml` - 指示フォーマット
-- `queue/tasks/asahara.yaml` など - タスクフォーマット
-- `queue/reports/asahara_report.yaml` など - 報告フォーマット
+- `queue/tasks/asakura.yaml` など - タスクフォーマット
+- `queue/reports/asakura_report.yaml` など - 報告フォーマット
 
 YAML の基本書き方：
 ```yaml
@@ -139,7 +139,7 @@ bash: |
 - 報告集約方法理解
 
 #### 各アイドル用
-- `instructions/asahara.md` - リーダーシップ
+- `instructions/asakura.md` - リーダーシップ
 - `instructions/higuchi.md` - 創意工夫
 - `instructions/fukumaru.md` - 品質管理
 - `instructions/ichikawa.md` - 実装支援
@@ -181,7 +181,7 @@ description: "各エージェントが正常に起動できることを確認"
 #### 2.1 アイドル起動スクリプト作成
 ```bash
 # scripts/ に各アイドル用スクリプト作成
-scripts/idol_asahara.sh
+scripts/idol_asakura.sh
 scripts/idol_higuchi.sh
 scripts/idol_fukumaru.sh
 scripts/idol_ichikawa.sh
@@ -190,7 +190,7 @@ scripts/idol_ichikawa.sh
 #### 2.2 各アイドルの Claude Code セッション起動
 ```bash
 # tmux pane 0 で
-claude < scripts/idol_asahara.sh
+claude < scripts/idol_asakura.sh
 
 # tmux pane 1 で
 claude < scripts/idol_higuchi.sh
@@ -352,7 +352,7 @@ A. pwd で現在位置確認、cd で移動
 
 [Manager] 「マスター、タスク受け取りました！」
            ↓
-[Asahara] ✅ タスク完了
+[Asakura] ✅ タスク完了
 [Higuchi] ✅ タスク完了
 [Fukumaru] ✅ タスク完了
 [Ichikawa] ✅ タスク完了

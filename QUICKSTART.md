@@ -160,7 +160,7 @@ cat queue/producer_to_manager.yaml
 ### 各アイドルのタスクを確認
 
 ```bash
-cat queue/tasks/asahara.yaml
+cat queue/tasks/asakura.yaml
 cat queue/tasks/higuchi.yaml
 cat queue/tasks/fukumaru.yaml
 cat queue/tasks/ichikawa.yaml
@@ -170,7 +170,7 @@ cat queue/tasks/ichikawa.yaml
 
 ```bash
 ls -la queue/reports/
-cat queue/reports/asahara_report.yaml
+cat queue/reports/asakura_report.yaml
 ```
 
 ### ダッシュボードを確認

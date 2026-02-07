@@ -53,7 +53,7 @@ echo \"📄 ファイル構造の確認中...\"
 
 REQUIRED_FILES=(
     \"instructions/manager.md\"
-    \"instructions/asahara.md\"
+    \"instructions/asakura.md\"
     \"instructions/higuchi.md\"
     \"instructions/fukumaru.md\"
     \"instructions/ichikawa.md\"

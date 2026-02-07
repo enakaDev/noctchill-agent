@@ -2,8 +2,8 @@
 
 # noctchill-agent tmux セッション起動スクリプト
 
-PROJECT_ROOT=\"$(cd \\\"$(dirname \\\"$0\\\")/../\\\" && pwd)\"
-SESSION_NAME=\"noctchill\"
+SESSION_NAME="noctchill"
+PROJECT_ROOT=$(pwd)
 
 echo \"🎵 ノクチル マルチエージェント開発システム\"
 echo \"tmux セッション起動中...\"
@@ -12,7 +12,7 @@ echo \"\"
 # 既存セッションをチェック
 if tmux has-session -t $SESSION_NAME 2>/dev/null; then
     echo \"⚠️  セッション '$SESSION_NAME' は既に実行中です。\"
-    echo \"既存セッションに接続しますか？ (y/n)\"
+    echo \"既存セッションに接続しますか？ \(y/n\)\"
     read -r response
     if [ \"$response\" != \"y\" ]; then
         echo \"キャンセルしました。\"
@@ -22,46 +22,46 @@ if tmux has-session -t $SESSION_NAME 2>/dev/null; then
     exit 0
 fi
 
-# 新規セッション作成
-tmux new-session -d -s $SESSION_NAME -x 200 -y 50
+# 1. 新規セッション作成 
+# 最初から Window 0 を "producer" という名前で作成し、ディレクトリも指定します
+tmux new-session -d -s $SESSION_NAME -n "producer" -c "$PROJECT_ROOT" -x 200 -y 50
 
-# ウィンドウ構成作成
-# Window 0: プロデューサー（管理画面）
-tmux new-window -t $SESSION_NAME:0 -n \"producer\"
-tmux send-keys -t $SESSION_NAME:0 \"cd $PROJECT_ROOT && clear\" Enter
+# Window 0 で初期コマンド実行
+tmux send-keys -t $SESSION_NAME:0 "clear" Enter
 
-# Window 1: ダッシュボード
-tmux new-window -t $SESSION_NAME:1 -n \"dashboard\"
-tmux send-keys -t $SESSION_NAME:1 \"cd $PROJECT_ROOT && clear\" Enter
+# 2. Window 1: ダッシュボード
+tmux new-window -t $SESSION_NAME:1 -n "dashboard" -c "$PROJECT_ROOT"
+tmux send-keys -t $SESSION_NAME:1 "clear" Enter
 
-# Window 2: マネージャー
-tmux new-window -t $SESSION_NAME:2 -n \"manager\"
-tmux send-keys -t $SESSION_NAME:2 \"cd $PROJECT_ROOT && clear\" Enter
+# 3. Window 2: マネージャー
+tmux new-window -t $SESSION_NAME:2 -n "manager" -c "$PROJECT_ROOT"
+tmux send-keys -t $SESSION_NAME:2 "clear" Enter
 
-# Window 3: アイドル実行環境
-# 4つのペインを作成
-tmux new-window -t $SESSION_NAME:3 -n \"idols\"
+# 4. Window 3: アイドル実行環境（4分割）
+tmux new-window -t $SESSION_NAME:3 -n "idols" -c "$PROJECT_ROOT"
 
-# 最初のペイン（浅倉 透）
-tmux send-keys -t $SESSION_NAME:3 \"cd $PROJECT_ROOT && clear\" Enter
+# ペイン分割のロジック
+# 最初（左上：浅倉 透）
+tmux send-keys -t $SESSION_NAME:3.0 "clear; echo '--- 浅倉 透 ---'" Enter
 
-# 2番目のペイン（樋口 円香）
-tmux split-window -h -t $SESSION_NAME:3
-tmux send-keys -t $SESSION_NAME:3.1 \"cd $PROJECT_ROOT && clear\" Enter
+# 右に分割（右上：樋口 円香）
+tmux split-window -h -t $SESSION_NAME:3.0 -c "$PROJECT_ROOT"
+tmux send-keys -t $SESSION_NAME:3.1 "clear; echo '--- 樋口 円香 ---'" Enter
 
-# 3番目のペイン（福丸 小糸）
-tmux split-window -v -t $SESSION_NAME:3.0
-tmux send-keys -t $SESSION_NAME:3.2 \"cd $PROJECT_ROOT && clear\" Enter
+# 左側を下に分割（左下：福丸 小糸）
+tmux split-window -v -t $SESSION_NAME:3.0 -c "$PROJECT_ROOT"
+tmux send-keys -t $SESSION_NAME:3.2 "clear; echo '--- 福丸 小糸 ---'" Enter
 
-# 4番目のペイン（市川 雛菜）
-tmux split-window -v -t $SESSION_NAME:3.1
-tmux send-keys -t $SESSION_NAME:3.3 \"cd $PROJECT_ROOT && clear\" Enter
+# 右側を下に分割（右下：市川 雛菜）
+tmux split-window -v -t $SESSION_NAME:3.1 -c "$PROJECT_ROOT"
+tmux send-keys -t $SESSION_NAME:3.3 "clear; echo '--- 市川 雛菜 ---'" Enter
 
-# ペインのレイアウト設定
+# レイアウトを整えて、最初の画面に戻る
 tmux select-layout -t $SESSION_NAME:3 tiled
-
-# Window 0 に戻る
 tmux select-window -t $SESSION_NAME:0
+
+# セッションにアタッチ
+tmux attach-session -t $SESSION_NAME
 
 echo \"✅ tmux セッション '$SESSION_NAME' を作成しました\"
 echo \"\"

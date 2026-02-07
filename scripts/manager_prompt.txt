@@ -12,7 +12,7 @@ cat << 'PROMPT'
 1. プロジェクトルートの `queue/producer_to_manager.yaml` を読み込み、プロデューサーからの指示を確認
 2. 指示を分析し、4人のアイドルに適切にタスクを分配
 3. 各アイドル用のタスクファイルを `queue/tasks/` に作成：
-   - `queue/tasks/asahara.yaml`（浅倉 透）
+   - `queue/tasks/asakura.yaml`（浅倉 透）
    - `queue/tasks/higuchi.yaml`（樋口 円香）
    - `queue/tasks/fukumaru.yaml`（福丸 小糸）
    - `queue/tasks/ichikawa.yaml`（市川 雛菜）
@@ -23,7 +23,7 @@ cat << 'PROMPT'
 ## 指示書参照
 
 - マネージャー自身の役割：`instructions/manager.md`
-- 各アイドルの役割：`instructions/asahara.md`, `instructions/higuchi.md`, `instructions/fukumaru.md`, `instructions/ichikawa.md`
+- 各アイドルの役割：`instructions/asakura.md`, `instructions/higuchi.md`, `instructions/fukumaru.md`, `instructions/ichikawa.md`
 
 ## 重要ルール
 
@@ -81,7 +81,7 @@ description: |
 
 ### マネージャーのタスク分配例
 ```yaml
-# queue/tasks/asahara.yaml
+# queue/tasks/asakura.yaml
 task_id: "dev_001_a"
 command: "テスト計画・統括"
 description: "テスト全体を統括してください"
