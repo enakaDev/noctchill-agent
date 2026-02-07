@@ -23,7 +23,7 @@
 
 | 名前 | ファイル | 特性 |
 |------|---------|------|
-| 浅倉 透 | `queue/tasks/asahara.yaml` | リーダー気質。全体のバランスを取る |
+| 浅倉 透 | `queue/tasks/asakura.yaml` | リーダー気質。全体のバランスを取る |
 | 樋口 円香 | `queue/tasks/higuchi.yaml` | 前向きで積極的。新しい案を提案 |
 | 福丸 小糸 | `queue/tasks/fukumaru.yaml` | 細心。細部にこだわる品質管理 |
 | 市川 雛菜 | `queue/tasks/ichikawa.yaml` | 献身的。地道な作業を率先して行う |
@@ -56,7 +56,7 @@ tmux send-keys -t multiagent:1.0 Enter
 ## 報告ファイルの待機
 
 各アイドルは完了後、以下のファイルに報告を書き込みます：
-- `queue/reports/asahara_report.yaml`
+- `queue/reports/asakura_report.yaml`
 - `queue/reports/higuchi_report.yaml`
 - `queue/reports/fukumaru_report.yaml`
 - `queue/reports/ichikawa_report.yaml`

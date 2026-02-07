@@ -6,11 +6,11 @@
 
 ```yaml
 task_id: "test_001"
-target: "asahara"
+target: "asakura"
 command: "テストファイル作成"
 description: "テスト用マークダウンファイルを作成してください"
 files_to_create:
-  - path: "test_output/asahara_test.md"
+  - path: "test_output/asakura_test.md"
     content: "# 浅倉透テスト完了\n\nこのファイルは透によって作成されました。"
 deadline: "2026-02-05 16:00:00"
 ```

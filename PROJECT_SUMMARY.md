@@ -59,7 +59,7 @@ noctchill-agent/
 │
 ├── 📂 instructions/                # 各ロール用の指示書
 │   ├── manager.md                  # マネージャー役割定義
-│   ├── asahara.md                  # 浅倉 透の役割定義
+│   ├── asakura.md                  # 浅倉 透の役割定義
 │   ├── higuchi.md                  # 樋口 円香の役割定義
 │   ├── fukumaru.md                 # 福丸 小糸の役割定義
 │   └── ichikawa.md                 # 市川 雛菜の役割定義
@@ -67,12 +67,12 @@ noctchill-agent/
 ├── 📂 queue/                       # タスク・報告ファイル
 │   ├── producer_to_manager.yaml    # プロデューサー → マネージャー指示
 │   ├── 📂 tasks/                   # マネージャー → 各アイドル タスク
-│   │   ├── asahara.yaml
+│   │   ├── asakura.yaml
 │   │   ├── higuchi.yaml
 │   │   ├── fukumaru.yaml
 │   │   └── ichikawa.yaml
 │   └── 📂 reports/                 # 各アイドル → マネージャー 報告
-│       ├── asahara_report.yaml
+│       ├── asakura_report.yaml
 │       ├── higuchi_report.yaml
 │       ├── fukumaru_report.yaml
 │       └── ichikawa_report.yaml
@@ -139,9 +139,9 @@ noctchill-agent/
 
 ```
 浅倉 透（pane 0）
-  ├─ queue/tasks/asahara.yaml 監視
+  ├─ queue/tasks/asakura.yaml 監視
   ├─ リーダーシップベースのタスク処理
-  └─ queue/reports/asahara_report.yaml に報告
+  └─ queue/reports/asakura_report.yaml に報告
 
 樋口 円香（pane 1）
   ├─ queue/tasks/higuchi.yaml 監視
