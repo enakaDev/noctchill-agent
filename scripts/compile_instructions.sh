@@ -13,10 +13,10 @@ echo "🎵 ノクチル instructions コンパイラ"
 echo "=================================="
 echo ""
 
-# アイドル設定
-declare -A IDOL_NAMES
-declare -A IDOL_DIRS
-IDOL_NAMES=(
+# キャラクター設定（プロデューサー + アイドル4人）
+declare -A CHAR_NAMES
+CHAR_NAMES=(
+    ["producer"]="プロデューサー"
     ["asakura"]="浅倉 透"
     ["higuchi"]="樋口 円香"
     ["fukumaru"]="福丸 小糸"
@@ -25,7 +25,7 @@ IDOL_NAMES=(
 
 analyze_and_update() {
     local idol=$1
-    local name=${IDOL_NAMES[$idol]}
+    local name=${CHAR_NAMES[$idol]}
     local instruction_file="$INSTRUCTIONS_DIR/${idol}.md"
     local commu_personal="$COMMU_DIR/${idol}"
     local commu_noctchill="$COMMU_DIR/noctchill"
@@ -148,8 +148,8 @@ ${commu_content}
     echo "  ✅ 完了: $instruction_file"
 }
 
-# 各アイドルを処理
-for idol in asakura higuchi fukumaru ichikawa; do
+# 各キャラクターを処理
+for idol in producer asakura higuchi fukumaru ichikawa; do
     analyze_and_update "$idol"
     echo ""
 done
