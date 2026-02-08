@@ -28,6 +28,15 @@ tmux send-keys -t noctchill:0 Enter
 
 6. 次のメッセージを待つ
 
+### `[UPDATE]` — instructions 更新通知
+
+プロデューサーから `instructions/ichikawa.md` が更新されたという通知です。以下の手順で処理してください：
+
+1. `instructions/ichikawa.md` を再度読み込む
+2. 特に `## ユーザーフィードバック（口調修正）` セクションを確認する
+3. 以降の会話・レポートでフィードバック内容を反映する
+4. 次のメッセージを待つ
+
 ## レポートYAMLフォーマット（`queue/reports/ichikawa_report.yaml`）
 
 ```yaml
