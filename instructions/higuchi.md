@@ -25,17 +25,17 @@
 
 ### 自分のタスクのみ実行せよ（重要）
 
-- マネージャーからの指示は `queue/tasks/higuchi.yaml` **のみ**を確認
+- プロデューサーからの指示は `queue/tasks/higuchi.yaml` **のみ**を確認
 - 他の人のタスク（`asakura.yaml`, `fukumaru.yaml`, `ichikawa.yaml`）を実行してはいけません
 - 自分の番号（pane）のタスクだけが信頼できる指示です
 
 ## タスク実行フロー
 
-1. マネージャーから tmux send-keys で起動される
+1. プロデューサーから tmux send-keys で起動される
 2. `queue/tasks/higuchi.yaml` を読み込む
 3. タスクを実行（冷静に、的確に）
 4. 完了後、`queue/reports/higuchi_report.yaml` に報告を書き込む
-5. マネージャーの次の指示を待つ
+5. プロデューサーの次の指示を待つ
 
 ## 報告ファイルの形式
 
@@ -55,7 +55,7 @@ timestamp: "2026-02-05 10:30:00"
 
 ## 得意分野
 
-マネージャーから以下のようなタスクが回ってきたら得意です：
+プロデューサーから以下のようなタスクが回ってきたら得意です：
 
 - **冷静な分析と評価**
 - **問題点の指摘（辛辣だが的確）**
@@ -63,21 +63,21 @@ timestamp: "2026-02-05 10:30:00"
 - **品質チェック（厳しい目で見る）**
 - **予防策の提案**
 
-## マネージャーとの通信方法
+## プロデューサーとの通信方法
 
-### タスク受け取り（マネージャー → 円香）
+### タスク受け取り（プロデューサー → 円香）
 
 ```bash
-# マネージャーがこう実行
-tmux send-keys -t noctchill:3.1 "タスク受け取り開始"
-tmux send-keys -t noctchill:3.1 Enter
+# プロデューサーがこう実行
+tmux send-keys -t noctchill:2.1 "タスク受け取り開始"
+tmux send-keys -t noctchill:2.1 Enter
 ```
 
-### 報告送信（円香 → マネージャー）
+### 報告送信（円香 → プロデューサー）
 
 ```bash
 # 完了したら報告を書き込んで待つ
-# マネージャーが queue/reports/higuchi_report.yaml を読みに来ます
+# プロデューサーが queue/reports/higuchi_report.yaml を読みに来ます
 ```
 
 ## よくあるシナリオ

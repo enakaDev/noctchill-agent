@@ -5,7 +5,7 @@
 ### Phase 1: 基本構造構築
 - [x] プロジェクトディレクトリ構成作成
 - [x] 各ロール用の詳細な役割定義書作成
-  - [x] manager.md - マネージャー
+  - [x] producer.md - プロデューサー
   - [x] asakura.md - 浅倉 透
   - [x] higuchi.md - 樋口 円香
   - [x] fukumaru.md - 福丸 小糸
@@ -18,42 +18,26 @@
 - [x] QUICKSTART ガイド作成
 - [x] git 初期化
 
-### Phase 1a: ドキュメント・プロンプト
-- [x] manager_prompt.txt - マネージャー用 Claude Code プロンプト
-- [x] 各アイドルの役割定義と行動原則
+### Phase 2: Claude Code エージェント実装
+- [x] イベント駆動アーキテクチャ設計（ポーリング → send-keys 通知方式）
+- [x] エージェント一括起動スクリプト作成（launch_agents.sh）
+- [x] タスク送信ヘルパー作成（send_task.sh）
+- [x] プロデューサーエージェント実装
+  - [x] システムプロンプト作成（producer_system.md）
+  - [x] `[TASK]` 受信 → task_input.yaml 読み込み → タスク分解
+  - [x] 各アイドル用タスクYAML自動生成（queue/tasks/）
+  - [x] `[REPORT:<name>]` 受信 → レポート集約 → ダッシュボード更新
+  - [x] エラーハンドリング（失敗レポート検知、YAML読み込みエラー）
+- [x] アイドルエージェント実装（×4）
+  - [x] 浅倉 透（asakura_system.md）— 直感的判断、全体統括
+  - [x] 樋口 円香（higuchi_system.md）— 冷静な分析、品質チェック
+  - [x] 福丸 小糸（fukumaru_system.md）— 地道で丁寧な作業
+  - [x] 市川 雛菜（ichikawa_system.md）— アイデア出し、ポジティブ発想
+- [x] 初回動作テスト完了（自己紹介タスク）
 
 ---
 
 ## 🚀 次のステップ - 実装予定
-
-### Phase 2: Claude Code エージェント実装
-
-#### 2.1 マネージャーエージェント実装
-- [ ] Claude Code インタラクティブ起動スクリプト
-- [ ] `producer_to_manager.yaml` 監視機能
-- [ ] タスク分解ロジック実装
-- [ ] 各アイドル用タスクファイル自動生成
-- [ ] `queue/reports/` 監視と集約
-- [ ] ダッシュボード自動更新機能
-- [ ] エラーハンドリング
-
-#### 2.2 アイドルエージェント実装（×4）
-- [ ] 浅倉 透エージェント
-  - [ ] `queue/tasks/asakura.yaml` 監視
-  - [ ] 直感的判断ベースのタスク処理
-  - [ ] 報告ファイル自動生成
-- [ ] 樋口 円香エージェント
-  - [ ] `queue/tasks/higuchi.yaml` 監視
-  - [ ] 冷静な分析・品質チェック処理
-  - [ ] リスク評価・問題点の指摘
-- [ ] 福丸 小糸エージェント
-  - [ ] `queue/tasks/fukumaru.yaml` 監視
-  - [ ] 地道で丁寧なチェック・確認処理
-  - [ ] 詳細な作業報告
-- [ ] 市川 雛菜エージェント
-  - [ ] `queue/tasks/ichikawa.yaml` 監視
-  - [ ] アイデア出し・楽しい発想の生成
-  - [ ] ポジティブなアプローチでの作業処理
 
 ### Phase 3: Webダッシュボード開発
 
@@ -111,43 +95,37 @@
 | フェーズ | 期限目安 | ゴール |
 |---------|---------|-------|
 | Phase 1 | ✅ 完了 | 基本構造構築、ドキュメント完成 |
-| Phase 2 | 2-3週間 | Claude Code エージェント動作確認 |
+| Phase 2 | ✅ 完了 | Claude Code エージェント動作確認 |
 | Phase 3 | 3-4週間 | Web ダッシュボード β版リリース |
 | Phase 4 | 1-2週間 | テスト完了、最適化 |
 | Phase 5 | 継続的 | 拡張機能追加 |
 
 ---
 
-## 📋 詳細実装タスク
+## 📋 アーキテクチャ概要
 
-### A. マネージャーエージェント実装
+### A. イベント駆動フロー（Phase 2 で実装済み）
 
-```python
-# 疑似コード
-class Manager:
-    def __init__(self):
-        self.status = "待機中"
-        
-    def run(self):
-        while True:
-            # 指示確認
-            instruction = self.read_instruction()
-            if instruction:
-                # タスク分解
-                tasks = self.decompose_task(instruction)
-                # 各アイドルに分配
-                for idol_name, task in tasks.items():
-                    self.write_task(idol_name, task)
-                # アイドル起動
-                self.notify_idols()
-                # 報告待機
-                reports = self.wait_reports()
-                # ダッシュボード更新
-                self.update_dashboard(reports)
-            time.sleep(5)
+```
+ユーザー
+  │  queue/task_input.yaml に指示を書き込み
+  │  プロデューサーに [TASK] メッセージを入力
+  ▼
+プロデューサー (Window 0) ── Claude Code --system-prompt
+  │  task_input.yaml 読み込み → タスク分解
+  │  queue/tasks/{idol}.yaml 作成 → send-keys で [TASK] 通知
+  ▼
+アイドル×4 (Window 2, Pane 0-3) ── 各 Claude Code --system-prompt
+  │  タスク実行 → queue/reports/{idol}_report.yaml 作成
+  │  send-keys で [REPORT:<name>] 通知
+  ▼
+プロデューサー
+  │  全員分揃ったら集約 → dashboard.md 更新
+  ▼
+ユーザーに完了報告
 ```
 
-### B. ダッシュボード Web API
+### B. ダッシュボード Web API（Phase 3 で実装予定）
 
 ```javascript
 // 疑似コード
@@ -162,18 +140,18 @@ app.get('/api/status', (req, res) => {
 });
 ```
 
-### C. React ダッシュボード
+### C. React ダッシュボード（Phase 3 で実装予定）
 
 ```jsx
 // 疑似コード
 function Dashboard() {
     const [status, setStatus] = useState(null);
-    
+
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:3001/api/updates');
         ws.onmessage = (e) => setStatus(JSON.parse(e.data));
     }, []);
-    
+
     return (
         <div className="dashboard">
             <TaskProgress />
@@ -220,10 +198,10 @@ function Dashboard() {
 
 **ノクチル マルチエージェント開発フレームワーク**
 
-アイドルマスター シャイニーカラーズのユニット「ノクチル」をモチーフにしたAIマルチエージェント開発システムです。プロデューサー（ユーザー）からの指示を、マネージャーが4人のアイドルに分配し、協力して目標を達成する仕組みです。
+アイドルマスター シャイニーカラーズのユニット「ノクチル」をモチーフにしたAIマルチエージェント開発システムです。ユーザーからの指示を、プロデューサーが4人のアイドルに分配し、協力して目標を達成する仕組みです。
 
 **目標**: スマホからもリアルタイムで進捗を確認でき、出先からでも開発を進めることができるシステムの構築
 
 ---
 
-**実装開始予定：2026年2月中旬**
+**Phase 2 完了：2026年2月7日**

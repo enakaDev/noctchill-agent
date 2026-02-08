@@ -54,7 +54,7 @@ sudo apt-get install tmux
 ### □ 2. プロジェクトの基本操作習熟
 
 #### YAML ファイル形式の理解
-- `queue/producer_to_manager.yaml` - 指示フォーマット
+- `queue/task_input.yaml` - 指示フォーマット
 - `queue/tasks/asakura.yaml` など - タスクフォーマット
 - `queue/reports/asakura_report.yaml` など - 報告フォーマット
 
@@ -133,8 +133,8 @@ bash: |
 
 ### □ 4. 役割定義書の深い理解
 
-#### マネージャー用
-- `instructions/manager.md` を熟読
+#### プロデューサー用
+- `instructions/producer.md` を熟読
 - タスク分解ロジック理解
 - 報告集約方法理解
 
@@ -148,7 +148,7 @@ bash: |
 
 ## 💻 Phase 2 実装ステップ
 
-### ステップ 1: マネージャーエージェント実装
+### ステップ 1: プロデューサーエージェント実装
 
 #### 1.1 Claude Code セッション起動
 ```bash
@@ -159,19 +159,16 @@ cd /home/shoot/work/noctchill-agent
 claude
 ```
 
-#### 1.2 プロンプト入力
-`scripts/manager_prompt.txt` の内容をコピーして、Claude に貼り付けます。
-
-#### 1.3 初期テスト実行
+#### 1.2 初期テスト実行
 ```yaml
-# queue/producer_to_manager.yaml
+# queue/task_input.yaml
 task_id: "init_test"
 command: "システム動作確認"
 description: "各エージェントが正常に起動できることを確認"
 ```
 
 #### 1.4 動作検証
-- ✅ マネージャーが指示を受け取る
+- ✅ プロデューサーが指示を受け取る
 - ✅ タスクファイルが生成される
 - ✅ 報告ファイルが生成される
 - ✅ ダッシュボード更新される
@@ -199,8 +196,8 @@ claude < scripts/idol_higuchi.sh
 ```
 
 #### 2.3 通信テスト
-- ✅ マネージャー → アイドル タスク配信
-- ✅ アイドル → マネージャー 報告送信
+- ✅ プロデューサー → アイドル タスク配信
+- ✅ アイドル → プロデューサー 報告送信
 - ✅ 4つが並列実行できることを確認
 
 ### ステップ 3: 統合テスト
@@ -252,7 +249,7 @@ tail -f status/dashboard.md
 ## 🎓 学習ポイント
 
 ### マルチエージェント設計
-- 階層構造（producer → manager → idols）
+- 階層構造（user → producer → idols）
 - 非同期通信（ファイルベース）
 - エラーハンドリング
 
@@ -275,7 +272,7 @@ tail -f status/dashboard.md
 ✅ `tmux send-keys -t pane "msg"` + `tmux send-keys -t pane Enter`
 
 ### 落とし穴 2: ファイルパス指定
-- 相対パス：`queue/producer_to_manager.yaml`
+- 相対パス：`queue/task_input.yaml`
 - プロジェクトルートからの相対パス使用
 
 ### 落とし穴 3: YAML 形式エラー
@@ -309,7 +306,7 @@ tail -f status/dashboard.md
 
 | 日付 | 内容 | 目標 |
 |------|------|------|
-| 2/6-2/8 | マネージャーエージェント実装 | 指示受け取り・タスク分配 |
+| 2/6-2/8 | プロデューサーエージェント実装 | 指示受け取り・タスク分配 |
 | 2/9-2/11 | 各アイドルエージェント実装 | 各自がタスク処理・報告 |
 | 2/12-2/14 | 統合テスト・デバッグ | 全員が正常に動作 |
 | 2/15 | Phase 2 完了 | マルチエージェント完成 |
@@ -350,14 +347,14 @@ A. pwd で現在位置確認、cd で移動
 ```
 🎵 ノクチル がんばって！
 
-[Manager] 「マスター、タスク受け取りました！」
+[Producer] 「マスター、タスク受け取りました！」
            ↓
 [Asakura] ✅ タスク完了
 [Higuchi] ✅ タスク完了
 [Fukumaru] ✅ タスク完了
 [Ichikawa] ✅ タスク完了
            ↓
-[Manager] 「全員完了しました。ダッシュボード更新いたします。」
+[Producer] 「全員完了しました。ダッシュボード更新いたします。」
            ↓
 [Dashboard] 📊 リアルタイム表示
 [Smartphone] 📱 スマホからも確認可能
