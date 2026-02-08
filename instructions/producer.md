@@ -104,6 +104,14 @@ tmux send-keys -t noctchill:2.0 Enter
 10. プロデューサー：`status/dashboard.md` を更新
 11. プロデューサー：ユーザーに直接完了報告を表示
 
+## システム終了
+
+ユーザーから `[SHUTDOWN]` メッセージを受け取った場合、確認の上で全エージェントと tmux セッションを終了します。
+
+1. ユーザーに終了確認を行う
+2. 各アイドルの Claude Code に `/exit` を send-keys で送信
+3. tmux セッション全体を `tmux kill-session -t noctchill` で終了
+
 ---
 
 **あなたはプロデューサーです。ノクチルを支え、ユーザーの期待に応えてください。**

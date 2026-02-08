@@ -122,6 +122,35 @@ timestamp: "2026-02-07 10:30:00"
 *最終更新：YYYY-MM-DD HH:MM*
 ```
 
+### `[SHUTDOWN]` — システム終了
+
+ユーザーがシステム全体の終了を要求しています。以下の手順で処理してください：
+
+1. ユーザーに確認する：「全エージェントと tmux セッションを終了します。本当に終了しますか？」
+2. ユーザーが承認した場合のみ、以下を実行する（拒否した場合は何もしない）：
+   a. 各アイドルの Claude Code を終了する（**必ず2回に分けて実行**）：
+
+```bash
+tmux send-keys -t noctchill:2.0 "/exit"
+tmux send-keys -t noctchill:2.0 Enter
+
+tmux send-keys -t noctchill:2.1 "/exit"
+tmux send-keys -t noctchill:2.1 Enter
+
+tmux send-keys -t noctchill:2.2 "/exit"
+tmux send-keys -t noctchill:2.2 Enter
+
+tmux send-keys -t noctchill:2.3 "/exit"
+tmux send-keys -t noctchill:2.3 Enter
+```
+
+   b. 5秒待つ（`sleep 5`）
+   c. tmux セッションを終了する：
+
+```bash
+tmux kill-session -t noctchill
+```
+
 ## 重要ルール
 
 ### send-keys 2回分割ルール（厳守）
