@@ -3,9 +3,9 @@
 ## システム概要
 
 ```
-プロデューサー（あなた）
+ユーザー（あなた）
     ↓ 指示を出す
-マネージャー（Claude Code）
+プロデューサー（Claude Code）
     ↓ タスク分配
 4人のアイドル（Claude Code × 4、並列実行）
 ```
@@ -32,34 +32,32 @@ bash scripts/start.sh
 このコマンドでWSL2ターミナルが以下のウィンドウ構成で起動します：
 
 ```
-Window 0: producer   - プロデューサー用（指示出し）
+Window 0: user       - ユーザー用（指示出し）
 Window 1: dashboard  - ダッシュボード表示
-Window 2: manager    - マネージャー Claude Code
+Window 2: producer   - プロデューサー Claude Code
 Window 3: idols      - 4人のアイドル（4ペイン）
 ```
 
 ### 3. 各ウィンドウでの操作
 
-#### Window 2: Manager（マネージャーエージェント）
+#### Window 2: Producer（プロデューサーエージェント）
 
 ```bash
-# マネージャーを起動
-claude
-
-# プロンプトを貼り付け
-# scripts/manager_prompt.txt の内容をコピーして貼り付け
+# エージェントは start.sh で自動起動されます
+# 手動起動する場合:
+bash scripts/launch_agents.sh
 ```
 
-マネージャーが起動すると、定期的に `queue/producer_to_manager.yaml` をチェックして指示を待機します。
+プロデューサーはイベント駆動で動作します。`[TASK]` メッセージを受け取るまで待機します。
 
-#### Window 0: Producer（プロデューサー＝あなた）
+#### Window 0: User（ユーザー＝あなた）
 
 ```bash
 # テキストエディタで指示を書き込み
-nano queue/producer_to_manager.yaml
+nano queue/task_input.yaml
 
 # または echo で追記
-echo "task_id: test_001" >> queue/producer_to_manager.yaml
+echo "task_id: test_001" >> queue/task_input.yaml
 ```
 
 指示例：
@@ -100,9 +98,9 @@ code status/dashboard.md
 tmux attach-session -t noctchill
 
 # ウィンドウ切り替え
-Ctrl+B, 0    # Window 0 (producer)
+Ctrl+B, 0    # Window 0 (user)
 Ctrl+B, 1    # Window 1 (dashboard)
-Ctrl+B, 2    # Window 2 (manager)
+Ctrl+B, 2    # Window 2 (producer)
 Ctrl+B, 3    # Window 3 (idols)
 
 # Idols ウィンドウ内のペイン切り替え
@@ -119,18 +117,18 @@ tmux kill-session -t noctchill
 
 ### シナリオ：「テストを実行してくれ」
 
-1. **Window 0 (Producer)**
+1. **Window 0 (User)**
    ```bash
-   # プロデューサーが指示を書き込み
-   cat > queue/producer_to_manager.yaml << 'EOF'
+   # ユーザーが指示を書き込み
+   cat > queue/task_input.yaml << 'EOF'
    task_id: "test_001"
    command: "テスト実行"
    description: "test_output フォルダにテストファイルを作成してください"
    EOF
    ```
 
-2. **Window 2 (Manager)**
-   - マネージャーが指示を検出
+2. **Window 2 (Producer)**
+   - プロデューサーが指示を検出
    - 各アイドル用タスクファイルを作成
    - 各アイドルに通知
 
@@ -154,7 +152,7 @@ tree -L 2 /home/shoot/work/noctchill-agent
 ### 指示を確認
 
 ```bash
-cat queue/producer_to_manager.yaml
+cat queue/task_input.yaml
 ```
 
 ### 各アイドルのタスクを確認
@@ -181,7 +179,7 @@ cat status/dashboard.md
 
 ## エラーハンドリング
 
-### マネージャーが起動しない
+### プロデューサーが起動しない
 
 ```bash
 # Claude Code がインストールされているか確認
@@ -212,7 +210,7 @@ chmod +x scripts/*.sh
 
 - [ ] Claude Code インストール確認
 - [ ] tmux セッション起動
-- [ ] マネージャー Claude Code 起動
+- [ ] プロデューサー Claude Code 起動
 - [ ] 初期テスト指示を実行
 - [ ] 各アイドルの動作確認
 - [ ] Web ダッシュボード開発（スマホ対応）
