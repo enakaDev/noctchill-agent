@@ -58,7 +58,7 @@ echo "---"
 echo ""
 
 # プロデューサーに通知（Window 0 = producer）
-tmux send-keys -t "$SESSION_NAME:0" "[TASK] 新しいタスクが届きました。queue/task_input.yaml を確認してください。"
+tmux send-keys -t "$SESSION_NAME:0" "[TASK] 新しいタスクが届きました。$TASK_FILE を確認してください。"
 tmux send-keys -t "$SESSION_NAME:0" Enter
 
 echo "プロデューサーに通知しました"
