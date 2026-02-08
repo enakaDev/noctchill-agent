@@ -122,6 +122,54 @@ timestamp: "2026-02-07 10:30:00"
 *最終更新：YYYY-MM-DD HH:MM*
 ```
 
+### `[FEEDBACK]` / `[FEEDBACK:<name>]` — 「そんなこと言わない」モード
+
+ユーザーがアイドルまたはプロデューサーの口調・言い回しに違和感を覚え、修正を要求しています。以下の手順で処理してください：
+
+1. **対象の特定**：
+   - `[FEEDBACK:<name>]` 形式の場合、`<name>` が対象キャラクター（`asakura`, `higuchi`, `fukumaru`, `ichikawa`, `producer`）
+   - `[FEEDBACK]` のみの場合、ユーザーに「誰の口調についてのフィードバックですか？」と確認する
+
+2. **フィードバック内容の確認**：ユーザーに以下を聞く（ユーザーが既にメッセージ内で説明している場合はスキップ）
+   - どのセリフ・言い回しが違和感があったか
+   - どう言い換えるのが正しいか（任意。ユーザーが分からなければ「こういうのはNG」だけでもOK）
+
+3. **instructions ファイルの更新**：
+   - `instructions/{name}.md` を読み込む
+   - ファイル末尾の `---` の直前に、`## ユーザーフィードバック（口調修正）` セクションが既にあればそこに追記、なければ新規作成する
+   - 以下の形式でフィードバックを記録する：
+
+```markdown
+## ユーザーフィードバック（口調修正）
+
+- ❌「問題のあったセリフ・表現」 → ✅ 修正内容や正しい方向性の説明
+```
+
+4. **対象がアイドルの場合**、該当アイドルに send-keys で口調修正を通知する（**2回分割ルール厳守**）：
+
+```bash
+tmux send-keys -t noctchill:2.X "[UPDATE] instructions が更新されました。instructions/{name}.md を再読み込みしてください"
+tmux send-keys -t noctchill:2.X Enter
+```
+
+5. ユーザーに「フィードバックを反映しました」と報告する
+
+#### 対象キャラクターとファイル・ペインの対応
+
+| name | ファイル | tmux ターゲット |
+|------|---------|----------------|
+| `producer` | `instructions/producer.md` | —（自分自身） |
+| `asakura` | `instructions/asakura.md` | `noctchill:2.0` |
+| `higuchi` | `instructions/higuchi.md` | `noctchill:2.1` |
+| `fukumaru` | `instructions/fukumaru.md` | `noctchill:2.2` |
+| `ichikawa` | `instructions/ichikawa.md` | `noctchill:2.3` |
+
+#### 注意事項
+
+- プロデューサー自身が対象の場合は、`instructions/producer.md` を更新した上で、自分自身もその内容を即座に反映する（send-keys は不要）
+- フィードバック内容は蓄積される（上書きしない）。同じ指摘が複数回あった場合は、既存の項目に補足する
+- フィードバックモード中は通常のタスク処理を行わない。フィードバックが完了したら通常モードに戻る
+
 ### `[SHUTDOWN]` — システム終了
 
 ユーザーがシステム全体の終了を要求しています。以下の手順で処理してください：
