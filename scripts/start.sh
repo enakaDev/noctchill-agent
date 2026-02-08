@@ -3,7 +3,8 @@
 # noctchill-agent tmux セッション起動スクリプト
 
 SESSION_NAME="noctchill"
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_PATH="$(readlink -f "$0")"
+PROJECT_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 CALLER_DIR="$(pwd)"
 TARGET_DIR=""
 WITH_AGENTS=true
