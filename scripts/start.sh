@@ -2,11 +2,11 @@
 
 # noctchill-agent tmux セッション起動スクリプト
 
-SESSION_NAME="noctchill"
 SCRIPT_PATH="$(readlink -f "$0")"
 PROJECT_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 CALLER_DIR="$(pwd)"
 TARGET_DIR=""
+INSTANCE_NAME=""
 WITH_AGENTS=true
 
 # オプション解析
@@ -18,6 +18,10 @@ while [[ "$1" =~ ^-- ]]; do
             ;;
         --target)
             TARGET_DIR="$2"
+            shift 2
+            ;;
+        --instance)
+            INSTANCE_NAME="$2"
             shift 2
             ;;
         *)
@@ -35,11 +39,40 @@ fi
 # TARGET_DIR を絶対パスに正規化
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
 
+# インスタンス名の自動推論
+if [ -z "$INSTANCE_NAME" ]; then
+    if [ "$TARGET_DIR" = "$PROJECT_ROOT" ]; then
+        INSTANCE_NAME="default"
+    else
+        INSTANCE_NAME="$(basename "$TARGET_DIR")"
+    fi
+fi
+
+# インスタンス固有のディレクトリ
+QUEUE_DIR="$PROJECT_ROOT/instances/$INSTANCE_NAME/queue"
+STATUS_DIR="$PROJECT_ROOT/instances/$INSTANCE_NAME/status"
+SESSION_NAME="noctchill-$INSTANCE_NAME"
+
+# インスタンスディレクトリの作成（テンプレートからコピー）
+if [ ! -d "$QUEUE_DIR" ]; then
+    echo "インスタンス '$INSTANCE_NAME' を初期化中..."
+    mkdir -p "$QUEUE_DIR"/{tasks,reports}
+    mkdir -p "$STATUS_DIR"
+    if [ -f "$PROJECT_ROOT/instances/template/queue/task_input.yaml" ]; then
+        cp "$PROJECT_ROOT/instances/template/queue/task_input.yaml" "$QUEUE_DIR/"
+    fi
+    if [ -f "$PROJECT_ROOT/instances/template/status/dashboard.md" ]; then
+        cp "$PROJECT_ROOT/instances/template/status/dashboard.md" "$STATUS_DIR/"
+    fi
+fi
+
 echo "ノクチル マルチエージェント開発システム"
 echo "tmux セッション起動中..."
 echo ""
-echo "管理ディレクトリ: $PROJECT_ROOT"
-echo "対象リポジトリ:   $TARGET_DIR"
+echo "インスタンス名:     $INSTANCE_NAME"
+echo "管理ディレクトリ:   $PROJECT_ROOT"
+echo "対象リポジトリ:     $TARGET_DIR"
+echo "キューディレクトリ: $QUEUE_DIR"
 echo ""
 
 # 既存セッションをチェック
@@ -61,7 +94,7 @@ tmux send-keys -t "$SESSION_NAME:0" "clear" Enter
 
 # 2. Window 1: ダッシュボード（絶対パスで参照）
 tmux new-window -t "$SESSION_NAME:1" -n "dashboard" -c "$TARGET_DIR"
-tmux send-keys -t "$SESSION_NAME:1" "watch -n 2 cat $PROJECT_ROOT/status/dashboard.md" Enter
+tmux send-keys -t "$SESSION_NAME:1" "watch -n 2 cat $STATUS_DIR/dashboard.md" Enter
 
 # 3. Window 2: アイドル実行環境（4分割）— CWD は対象リポジトリ
 tmux new-window -t "$SESSION_NAME:2" -n "idols" -c "$TARGET_DIR"
@@ -97,7 +130,7 @@ echo ""
 # エージェント自動起動（デフォルト）
 if [ "$WITH_AGENTS" = true ]; then
     echo "エージェント自動起動中..."
-    bash "$PROJECT_ROOT/scripts/launch_agents.sh" "$TARGET_DIR"
+    bash "$PROJECT_ROOT/scripts/launch_agents.sh" "$TARGET_DIR" "$INSTANCE_NAME"
     echo ""
 fi
 

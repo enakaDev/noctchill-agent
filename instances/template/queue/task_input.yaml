@@ -1,0 +1,10 @@
+# Task input template
+# This file will be copied to each instance
+#
+# ⚠️ 注意：プロデューサーはこのタスクを直接実行しません
+# タスクは4人のアイドル（浅倉透、樋口円香、福丸小糸、市川雛菜）に分配されます
+# プロデューサーはタスクの管理・分配・進捗集約のみを担当します
+
+task: ""
+details: ""
+priority: "normal"
