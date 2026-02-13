@@ -8,6 +8,7 @@ CALLER_DIR="$(pwd)"
 TARGET_DIR=""
 INSTANCE_NAME=""
 WITH_AGENTS=true
+RUN_SETUP=false
 
 # オプション解析
 while [[ "$1" =~ ^-- ]]; do
@@ -24,12 +25,27 @@ while [[ "$1" =~ ^-- ]]; do
             INSTANCE_NAME="$2"
             shift 2
             ;;
+        --setup)
+            RUN_SETUP=true
+            shift
+            ;;
         *)
             echo "不明なオプション: $1"
             exit 1
             ;;
     esac
 done
+
+# --setup オプションが指定された場合、setup.sh を先に実行
+if [ "$RUN_SETUP" = true ]; then
+    echo "セットアップスクリプトを実行中..."
+    bash "$PROJECT_ROOT/scripts/setup.sh"
+    if [ $? -ne 0 ]; then
+        echo "セットアップに失敗しました。"
+        exit 1
+    fi
+    echo ""
+fi
 
 # TARGET_DIR のデフォルト: start.sh を実行したディレクトリ
 if [ -z "$TARGET_DIR" ]; then

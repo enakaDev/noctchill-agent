@@ -43,6 +43,14 @@ resolve_prompt() {
 echo "エージェント起動中..."
 echo "  管理ディレクトリ: $PROJECT_ROOT"
 echo "  対象リポジトリ:   $TARGET_DIR"
+echo ""
+
+# トークン使用量を計測
+if [ -x "$PROJECT_ROOT/scripts/token_counter.sh" ]; then
+    echo "トークン使用量を計測中..."
+    "$PROJECT_ROOT/scripts/token_counter.sh" | grep "起動時ロード"
+    echo ""
+fi
 
 # Producer (Window 0)
 echo "  プロデューサー起動中..."

@@ -8,6 +8,8 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INSTRUCTIONS_DIR="$PROJECT_ROOT/instructions"
 COMMU_DIR="$PROJECT_ROOT/commu"
+CONFIG_DIR="$PROJECT_ROOT/config"
+PROFILES_JSON="$CONFIG_DIR/character_profiles.json"
 
 echo "🎵 ノクチル instructions コンパイラ"
 echo "=================================="
@@ -82,21 +84,20 @@ ${commu_content}
 
 上記のコミュから読み取れる「${name}」の性格・口調の特徴を分析してください。
 
-出力形式（Markdown）:
-### コミュから読み取れる性格
-- 箇条書きで3-5個
+出力形式（JSON）:
+{
+  \"性格特徴\": [\"特徴1\", \"特徴2\", ...],
+  \"口調特徴\": [\"特徴1\", \"特徴2\", ...],
+  \"印象的セリフ\": [\"セリフ1\", \"セリフ2\", ...]
+}
 
-### コミュから読み取れる口調の特徴
-- 箇条書きで3-5個
-
-### 印象的なセリフ
-- 原文のまま3-5個引用"
+※ 純粋なJSONのみを出力してください。説明文は不要です。"
 
     local analysis
     # `ANALYZER_CMD` でプロンプトを実行
     # copilot -p の場合、プロンプトは引数として渡す必要がある
     analysis=$($ANALYZER_CMD "$prompt" 2>&1)
-    
+
     local exit_code=$?
     if [ $exit_code -ne 0 ] || [ -z "$analysis" ]; then
         echo "  ⚠️  分析に失敗しました（終了コード: $exit_code）"
@@ -106,12 +107,34 @@ ${commu_content}
         return
     fi
 
-        # instructions ファイルを更新
-        # 1) 分析出力の末尾に含まれる "Total usage" 以降を切り捨てる
-        marker="## コミュ分析結果"
-        analysis_clean=$(printf "%s\n" "$analysis" | sed '/^Total usage/,$d')
+    # JSONをクリーンアップ（Total usageなど余分な出力を削除）
+    analysis_json=$(printf "%s\n" "$analysis" | sed '/^Total usage/,$d' | sed -n '/{/,/}/p')
 
-        # 2) instruction_file を正規化して末尾に必ず単独行の "---" を置く
+    # JSONが有効か確認
+    if ! echo "$analysis_json" | jq empty 2>/dev/null; then
+        echo "  ⚠️  分析結果が有効なJSONではありません"
+        echo "  出力: $analysis_json"
+        return
+    fi
+
+    # character_profiles.jsonを更新
+    if [ ! -f "$PROFILES_JSON" ]; then
+        echo "{}" > "$PROFILES_JSON"
+    fi
+
+    # 既存のプロファイルデータを取得し、分析結果をマージ
+    tmp_json=$(mktemp)
+    jq --arg idol "$idol" --argjson analysis "$analysis_json" \
+        'if .[$idol] then
+            .[$idol] += $analysis
+        else
+            .[$idol] = $analysis
+        end' "$PROFILES_JSON" > "$tmp_json" && mv "$tmp_json" "$PROFILES_JSON"
+
+    # instructions ファイルには「JSONを参照」というメッセージのみ追加
+    # 既存の「## キャラクター詳細」セクションがなければ追加
+    if ! grep -q "## キャラクター詳細" "$instruction_file"; then
+        # instruction_file を正規化して末尾に必ず単独行の "---" を置く
         tmp_norm=$(mktemp)
         awk '
         { lines[NR] = $0 }
@@ -119,33 +142,17 @@ ${commu_content}
             last = NR
             while (last > 0 && (lines[last] == "" || lines[last] == "---")) last--
             for (i = 1; i <= last; i++) print lines[i]
+            print ""
+            print "## キャラクター詳細"
+            print ""
+            print "詳細なキャラクタープロファイルは `{{NOCTCHILL_HOME}}/config/character_profiles.json` の `" ENVIRON["idol"] "` を参照。"
+            print "口調・性格の要点はそこに集約されています。"
+            print ""
             print "---"
-        }' "$instruction_file" > "$tmp_norm" && mv "$tmp_norm" "$instruction_file"
+        }' idol="$idol" "$instruction_file" > "$tmp_norm" && mv "$tmp_norm" "$instruction_file"
+    fi
 
-        # 3) 既存のマーカーがあれば除去（マーカー行以降を最後の --- の前まで削除）
-        tmp_strip=$(mktemp)
-        awk -v marker="$marker" '
-        { lines[NR] = $0 }
-        END {
-            # find marker position (first occurrence)
-            m = 0
-            for (i = 1; i <= NR; i++) if (lines[i] == marker) { m = i; break }
-            # print up to either marker-1 (if found) or up to NR-1 (last --- is NR)
-            end_line = (m > 0) ? m-1 : NR-1
-            for (i = 1; i <= end_line; i++) print lines[i]
-        }' "$instruction_file" > "$tmp_strip"
-
-        # 4) 最後にマーカー + 分析結果（整形済み） + --- を挿入
-        mv "$tmp_strip" "$instruction_file"
-        {
-            echo ""
-            echo "$marker"
-            echo ""
-            printf "%s\n" "$analysis_clean"
-            echo "---"
-        } >> "$instruction_file"
-
-    echo "  ✅ 完了: $instruction_file"
+    echo "  ✅ 完了: $PROFILES_JSON (${idol} 更新)"
 }
 
 # 各キャラクターを処理

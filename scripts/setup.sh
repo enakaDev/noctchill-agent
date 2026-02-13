@@ -5,9 +5,13 @@
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CALLER_DIR="$(pwd)"
 
 echo "ノクチル マルチエージェント開発システム"
 echo "セットアップを開始します..."
+echo ""
+echo "noctchill-agent: $PROJECT_ROOT"
+echo "実行ディレクトリ: $CALLER_DIR"
 echo ""
 
 # 必須ツールチェック
@@ -33,9 +37,8 @@ echo "ディレクトリ構造の確認中..."
 
 REQUIRED_DIRS=(
     "instructions"
-    "queue/tasks"
-    "queue/reports"
-    "status"
+    "instances"
+    "instances/template"
     "scripts"
     "scripts/prompts"
 )
@@ -58,8 +61,8 @@ REQUIRED_FILES=(
     "instructions/higuchi.md"
     "instructions/fukumaru.md"
     "instructions/ichikawa.md"
-    "queue/task_input.yaml"
-    "status/dashboard.md"
+    "instances/template/queue/task_input.yaml"
+    "instances/template/status/dashboard.md"
     "scripts/prompts/producer_system.md"
     "scripts/prompts/asakura_system.md"
     "scripts/prompts/higuchi_system.md"
@@ -67,6 +70,7 @@ REQUIRED_FILES=(
     "scripts/prompts/ichikawa_system.md"
     "scripts/launch_agents.sh"
     "scripts/send_task.sh"
+    "scripts/start.sh"
     "README.md"
 )
 
@@ -92,8 +96,8 @@ test_output/
 
 # ローカルテスト用ファイル
 *.local.yaml
-queue/tasks/*.yaml
-queue/reports/*.yaml
+instances/*/queue/tasks/*.yaml
+instances/*/queue/reports/*.yaml
 
 # Node.js
 node_modules/
@@ -109,6 +113,84 @@ EOF
     echo "[OK] .gitignore 作成"
 else
     echo "[OK] .gitignore 既存"
+fi
+
+# Claude Code 権限設定ファイルの生成
+echo ""
+echo "Claude Code 権限設定ファイルの生成..."
+
+SETTINGS_FILE="$CALLER_DIR/.claude/settings.local.json"
+mkdir -p "$CALLER_DIR/.claude"
+
+# 基本権限リスト
+BASE_PERMISSIONS=(
+    "Bash(env)"
+    "Bash(cat:*)"
+    "Bash(tmux:*)"
+    "Bash(do)"
+    "Bash(echo:*)"
+    "Bash(done)"
+    "Bash(tree:*)"
+    "Bash(find:*)"
+    "WebFetch(domain:github.com)"
+)
+
+# noctchill-agent 用の必須権限リスト（動的にパスを構築）
+# 注意: // の後にスラッシュで始まるパスを置くと /// になってしまうので、
+# PROJECT_ROOT の先頭スラッシュを除去してから // と結合する
+NOCTCHILL_BASE="${PROJECT_ROOT#/}"  # 先頭の / を除去
+NOCTCHILL_PERMISSIONS=(
+    "Edit(//${NOCTCHILL_BASE}/instances/*/queue/**)"
+    "Edit(//${NOCTCHILL_BASE}/instances/*/status/**)"
+    "Write(//${NOCTCHILL_BASE}/instances/*/queue/**)"
+    "Write(//${NOCTCHILL_BASE}/instances/*/status/**)"
+    "Read(//${NOCTCHILL_BASE}/instances/*/queue/**)"
+    "Read(//${NOCTCHILL_BASE}/instances/*/status/**)"
+    "Read(//${NOCTCHILL_BASE}/instructions/**)"
+    "Write(//${NOCTCHILL_BASE}/instructions/**)"
+    "Edit(//${NOCTCHILL_BASE}/instructions/**)"
+    "Bash(rm://${NOCTCHILL_BASE}/instances/*/queue/reports/*)"
+)
+
+# すべての権限をマージ
+ALL_PERMISSIONS=("${BASE_PERMISSIONS[@]}" "${NOCTCHILL_PERMISSIONS[@]}")
+
+if command -v jq &> /dev/null; then
+    echo "[OK] jq を使用して設定ファイルを生成します"
+
+    if [ -f "$SETTINGS_FILE" ]; then
+        # 既存の設定ファイルがある場合はマージ
+        echo "  既存の設定ファイルにマージします"
+        TEMP_FILE=$(mktemp)
+        jq --argjson new_perms "$(printf '%s\n' "${ALL_PERMISSIONS[@]}" | jq -R . | jq -s .)" \
+           '.permissions.allow = (.permissions.allow + $new_perms | unique)' \
+           "$SETTINGS_FILE" > "$TEMP_FILE"
+        mv "$TEMP_FILE" "$SETTINGS_FILE"
+        echo "[OK] 権限を追加しました: $SETTINGS_FILE"
+    else
+        # 新規作成
+        echo "  新規に設定ファイルを作成します"
+        jq -n --argjson perms "$(printf '%s\n' "${ALL_PERMISSIONS[@]}" | jq -R . | jq -s .)" \
+           '{permissions: {allow: $perms, deny: [], ask: []}}' \
+           > "$SETTINGS_FILE"
+        echo "[OK] 設定ファイルを作成しました: $SETTINGS_FILE"
+    fi
+else
+    echo "[WARN] jq がインストールされていません"
+    echo "  手動で $SETTINGS_FILE を作成してください"
+    echo ""
+    echo "以下の内容を記述してください："
+    echo '{'
+    echo '  "permissions": {'
+    echo '    "allow": ['
+    for perm in "${ALL_PERMISSIONS[@]}"; do
+        echo "      \"$perm\","
+    done
+    echo '    ],'
+    echo '    "deny": [],'
+    echo '    "ask": []'
+    echo '  }'
+    echo '}'
 fi
 
 echo ""
