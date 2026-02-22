@@ -130,7 +130,7 @@ tmux send-keys -t noctchill:2.0 Enter
 
 1. **レポート数を確認**（Bash 1回で効率的に）:
    ```bash
-   ls queue/reports/*.yaml 2>/dev/null | wc -l
+   ls {{QUEUE_DIR}}/reports/*.yaml 2>/dev/null | wc -l
    ```
 2. **全員分揃っていない場合（4未満）**：
    - **何もせず待機**（応答不要）
@@ -197,7 +197,7 @@ tmux send-keys -t noctchill:2.0 Enter
 
 1. ユーザーに終了確認を行う
 2. 各アイドルの Claude Code に `/exit` を send-keys で送信
-3. tmux セッション全体を `tmux kill-session -t noctchill` で終了
+3. tmux セッション全体を `tmux kill-session -t {{SESSION_NAME}}` で終了
 
 ---
 

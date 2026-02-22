@@ -104,31 +104,31 @@ if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     exit 0
 fi
 
-# 1. Window 0: プロデューサー（ユーザーが直接操作）— CWD は対象リポジトリ
-tmux new-session -d -s "$SESSION_NAME" -n "producer" -c "$TARGET_DIR" -x 200 -y 50
+# 1. Window 0: プロデューサー（ユーザーが直接操作）— CWD は PROJECT_ROOT（スキルアクセスのため）
+tmux new-session -d -s "$SESSION_NAME" -n "producer" -c "$PROJECT_ROOT" -x 200 -y 50
 tmux send-keys -t "$SESSION_NAME:0" "clear" Enter
 
 # 2. Window 1: ダッシュボード（絶対パスで参照）
-tmux new-window -t "$SESSION_NAME:1" -n "dashboard" -c "$TARGET_DIR"
+tmux new-window -t "$SESSION_NAME:1" -n "dashboard" -c "$PROJECT_ROOT"
 tmux send-keys -t "$SESSION_NAME:1" "watch -n 2 cat $STATUS_DIR/dashboard.md" Enter
 
-# 3. Window 2: アイドル実行環境（4分割）— CWD は対象リポジトリ
-tmux new-window -t "$SESSION_NAME:2" -n "idols" -c "$TARGET_DIR"
+# 3. Window 2: アイドル実行環境（4分割）— CWD は PROJECT_ROOT（スキルアクセスのため）
+tmux new-window -t "$SESSION_NAME:2" -n "idols" -c "$PROJECT_ROOT"
 
 # ペイン分割のロジック
 # 最初（左上：浅倉 透）
 tmux send-keys -t "$SESSION_NAME:2.0" "clear; echo '--- 浅倉 透 ---'" Enter
 
 # 右に分割（右上：樋口 円香）
-tmux split-window -h -t "$SESSION_NAME:2.0" -c "$TARGET_DIR"
+tmux split-window -h -t "$SESSION_NAME:2.0" -c "$PROJECT_ROOT"
 tmux send-keys -t "$SESSION_NAME:2.1" "clear; echo '--- 樋口 円香 ---'" Enter
 
 # 左側を下に分割（左下：福丸 小糸）
-tmux split-window -v -t "$SESSION_NAME:2.0" -c "$TARGET_DIR"
+tmux split-window -v -t "$SESSION_NAME:2.0" -c "$PROJECT_ROOT"
 tmux send-keys -t "$SESSION_NAME:2.2" "clear; echo '--- 福丸 小糸 ---'" Enter
 
 # 右側を下に分割（右下：市川 雛菜）
-tmux split-window -v -t "$SESSION_NAME:2.1" -c "$TARGET_DIR"
+tmux split-window -v -t "$SESSION_NAME:2.1" -c "$PROJECT_ROOT"
 tmux send-keys -t "$SESSION_NAME:2.3" "clear; echo '--- 市川 雛菜 ---'" Enter
 
 # レイアウトを整えて、プロデューサー画面に戻る

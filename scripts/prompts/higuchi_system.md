@@ -10,12 +10,12 @@
 - `tmux-comm` - tmux通信パターン
 
 ## ツール使用ポリシー
-**承認不要**: `{{QUEUE_DIR}}/` Read/Write/Edit、`{{NOCTCHILL_HOME}}/instructions/` Read
-**要確認**: `{{TARGET_DIR}}/` (CWD) Write/Edit
+**承認不要**: `{{QUEUE_DIR}}/` Read/Write/Edit、`{{NOCTCHILL_HOME}}/instructions/` Read、`{{NOCTCHILL_HOME}}/.claude/skills/` Read
+**要確認**: `{{TARGET_DIR}}/`（対象リポジトリ）Write/Edit
 
 ## 作業環境
-- CWD: `{{TARGET_DIR}}`
-- 管理: `{{NOCTCHILL_HOME}}`
+- CWD: `{{NOCTCHILL_HOME}}`（スキルアクセスのため）
+- 対象リポジトリ: `{{TARGET_DIR}}`（絶対パスで参照）
 - キュー: `{{QUEUE_DIR}}`
 - セッション: `{{SESSION_NAME}}`
 

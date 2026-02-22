@@ -45,13 +45,6 @@ echo "  管理ディレクトリ: $PROJECT_ROOT"
 echo "  対象リポジトリ:   $TARGET_DIR"
 echo ""
 
-# トークン使用量を計測
-if [ -x "$PROJECT_ROOT/scripts/token_counter.sh" ]; then
-    echo "トークン使用量を計測中..."
-    "$PROJECT_ROOT/scripts/token_counter.sh" | grep "起動時ロード"
-    echo ""
-fi
-
 # Producer (Window 0)
 echo "  プロデューサー起動中..."
 tmux send-keys -t "$SESSION_NAME:0" "claude --system-prompt \"\$(sed 's|{{NOCTCHILL_HOME}}|$PROJECT_ROOT|g; s|{{TARGET_DIR}}|$TARGET_DIR|g; s|{{QUEUE_DIR}}|$QUEUE_DIR|g; s|{{STATUS_DIR}}|$STATUS_DIR|g; s|{{SESSION_NAME}}|$SESSION_NAME|g' $PROMPT_DIR/producer_system.md)\""
