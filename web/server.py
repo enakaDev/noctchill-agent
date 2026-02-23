@@ -2,6 +2,7 @@
 """noctchill-agent Web ダッシュボードサーバー"""
 
 import os
+import re
 import subprocess
 import glob as glob_mod
 import json
@@ -18,6 +19,15 @@ INSTANCE_NAME = os.environ.get("NOCTCHILL_INSTANCE", "default")
 QUEUE_DIR = PROJECT_ROOT / "instances" / INSTANCE_NAME / "queue"
 STATUS_DIR = PROJECT_ROOT / "instances" / INSTANCE_NAME / "status"
 SESSION_NAME = f"noctchill-{INSTANCE_NAME}"
+
+# エージェントペイン一覧
+AGENT_PANES = {
+    f"{SESSION_NAME}:0":   "プロデューサー",
+    f"{SESSION_NAME}:2.0": "浅倉 透",
+    f"{SESSION_NAME}:2.1": "樋口 円香",
+    f"{SESSION_NAME}:2.2": "福丸 小糸",
+    f"{SESSION_NAME}:2.3": "市川 雛菜",
+}
 
 # 認証トークン
 API_TOKEN = os.environ.get("NOCTCHILL_API_TOKEN", "")
@@ -60,6 +70,74 @@ def tmux_send(target, message):
                    capture_output=True)
     subprocess.run(["tmux", "send-keys", "-t", target, "Enter"],
                    capture_output=True)
+
+
+def capture_pane(target):
+    """tmux ペインの内容を取得する"""
+    result = subprocess.run(
+        ["tmux", "capture-pane", "-t", target, "-p"],
+        capture_output=True, text=True
+    )
+    return result.stdout if result.returncode == 0 else ""
+
+
+# Claude Code の許可プロンプトパターン
+_PROMPT_PATTERNS = [
+    # ❯ Yes / No 形式（矢印は複数のUnicode候補）
+    re.compile(r"[❯>]\s*(Yes|はい)", re.MULTILINE),
+    re.compile(r"[❯>]\s*(No|いいえ)", re.MULTILINE),
+    re.compile(r"[❯>]\s*(Allow|許可)", re.MULTILINE),
+    # [y/n] / [y/n/a/N] 形式
+    re.compile(r"\[y/n(/a(/N)?)?\]", re.IGNORECASE),
+    # "Yes, don't ask again" パターン
+    re.compile(r"Yes,\s*don.t ask again", re.IGNORECASE),
+    # Claude Code の典型的な許可ダイアログ
+    re.compile(r"Do you want to|Allow Claude|permission to|を実行してもよいですか", re.IGNORECASE),
+]
+
+# ツール名・コマンド抽出パターン
+_TOOL_PATTERNS = [
+    re.compile(r"Tool:\s*(.+)", re.IGNORECASE),
+    re.compile(r"Command:\s*(.+)", re.IGNORECASE),
+    re.compile(r"Run:\s*(.+)", re.IGNORECASE),
+    re.compile(r"bash\s+(.+)", re.IGNORECASE),
+]
+
+
+def detect_permission_prompt(pane_content):
+    """ペイン内容からClaude Codeの許可プロンプトを検出する。
+    検出された場合は dict を、なければ None を返す。"""
+    if not pane_content:
+        return None
+
+    # 末尾300文字に絞って検索（最新のプロンプトのみ対象）
+    recent = pane_content[-300:]
+
+    matched_pattern = None
+    for pat in _PROMPT_PATTERNS:
+        if pat.search(recent):
+            matched_pattern = pat.pattern
+            break
+
+    if not matched_pattern:
+        return None
+
+    # ツール名やコマンドを抽出
+    tool_info = ""
+    for pat in _TOOL_PATTERNS:
+        m = pat.search(recent)
+        if m:
+            tool_info = m.group(1).strip()[:200]
+            break
+
+    # 選択肢を確認（"don't ask again" があれば always/never も提示）
+    has_always = bool(re.search(r"don.t ask again|always|Always", recent, re.IGNORECASE))
+
+    return {
+        "tool": tool_info,
+        "snippet": recent.strip(),
+        "has_always": has_always,
+    }
 
 
 def tmux_session_exists():
@@ -286,6 +364,64 @@ def _handle_approval(request_id, decision):
     ])
 
     return jsonify({"status": decision, "request_id": request_id})
+
+
+@app.route("/api/pending-approvals")
+@require_auth
+def api_pending_approvals():
+    """許可プロンプト待ちのペイン一覧を返す"""
+    if not tmux_session_exists():
+        return jsonify({"pending": []})
+
+    pending = []
+    for target, agent_name in AGENT_PANES.items():
+        content = capture_pane(target)
+        info = detect_permission_prompt(content)
+        if info:
+            pending.append({
+                "target": target,
+                "agent": agent_name,
+                "tool": info["tool"],
+                "snippet": info["snippet"],
+                "has_always": info["has_always"],
+            })
+
+    return jsonify({"pending": pending})
+
+
+@app.route("/api/approve-pane", methods=["POST"])
+@require_auth
+def api_approve_pane():
+    """指定ペインに応答キーを送信する"""
+    data = request.json or {}
+    target = data.get("target", "")
+    decision = data.get("decision", "")  # "y" / "n" / "a" / "N"
+
+    if not target or decision not in ("y", "n", "a", "N"):
+        return jsonify({"status": "error",
+                        "message": "target と decision(y/n/a/N) が必要です"}), 400
+
+    if target not in AGENT_PANES:
+        return jsonify({"status": "error",
+                        "message": "不正なターゲットです"}), 400
+
+    if not tmux_session_exists():
+        return jsonify({"status": "error",
+                        "message": "tmux セッションが起動していません"}), 503
+
+    tmux_send(target, decision)
+
+    # ntfy 通知
+    label_map = {"y": "許可", "n": "拒否", "a": "常に許可", "N": "常に拒否"}
+    label = label_map.get(decision, decision)
+    agent_name = AGENT_PANES[target]
+    subprocess.Popen([
+        "bash", str(PROJECT_ROOT / "scripts" / "notify.sh"),
+        f"操作: {label}", f"[{INSTANCE_NAME}] {agent_name}: {label}しました",
+        "default", "white_check_mark" if decision in ("y", "a") else "x"
+    ])
+
+    return jsonify({"status": "ok", "target": target, "decision": decision})
 
 
 if __name__ == "__main__":

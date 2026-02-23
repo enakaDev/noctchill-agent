@@ -207,7 +207,35 @@
     padding: 16px;
     margin-bottom: 12px;
   }
-  .approval-card h3 { color: var(--warning); }
+  .approval-card h3 { color: var(--warning); margin-bottom: 8px; }
+  .approval-agent {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .approval-tool {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    word-break: break-all;
+  }
+  .approval-snippet {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: monospace;
+  }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-warning:hover { background: #e65100; }
+  .btn-neutral { background: var(--border); color: var(--text); }
+  .btn-neutral:hover { background: #3a3d4a; }
 
   /* Login */
   .login-overlay {
@@ -462,13 +490,6 @@ async function refreshStatus() {
     document.getElementById('currentTask').className = 'card-content empty';
   }
 
-  // Highlight approvals tab if pending
-  const approvalTab = document.querySelector('[data-tab="approvals"]');
-  if (data.approval_pending) {
-    approvalTab.style.color = 'var(--warning)';
-  } else {
-    approvalTab.style.color = '';
-  }
 }
 
 async function refreshDashboard() {
@@ -516,52 +537,50 @@ async function refreshReports() {
 }
 
 async function refreshApprovals() {
-  const data = await apiGet('/api/approvals');
+  const data = await apiGet('/api/pending-approvals');
   if (!data) return;
   const container = document.getElementById('approvalsContainer');
 
-  if ((!data.pending || data.pending.length === 0) &&
-      (!data.history || data.history.length === 0)) {
-    container.innerHTML = '<div class="empty">No approvals</div>';
+  // Highlight Approvals tab if prompts are pending
+  const approvalTab = document.querySelector('[data-tab="approvals"]');
+  if (data.pending && data.pending.length > 0) {
+    approvalTab.style.color = 'var(--warning)';
+    approvalTab.textContent = `Approvals (${data.pending.length})`;
+  } else {
+    approvalTab.style.color = '';
+    approvalTab.textContent = 'Approvals';
+  }
+
+  if (!data.pending || data.pending.length === 0) {
+    container.innerHTML = '<div class="empty">許可待ちのプロンプトはありません</div>';
     return;
   }
 
   let html = '';
+  for (const item of data.pending) {
+    const target = escapeHtml(item.target || '');
+    const btns = item.has_always
+      ? `<div class="btn-row" style="margin-bottom:6px">
+           <button class="btn btn-success" onclick="approvePane('${target}','y')">許可</button>
+           <button class="btn btn-danger"  onclick="approvePane('${target}','n')">拒否</button>
+         </div>
+         <div class="btn-row">
+           <button class="btn btn-warning" onclick="approvePane('${target}','a')">常に許可</button>
+           <button class="btn btn-neutral" onclick="approvePane('${target}','N')">常に拒否</button>
+         </div>`
+      : `<div class="btn-row">
+           <button class="btn btn-success" onclick="approvePane('${target}','y')">許可</button>
+           <button class="btn btn-danger"  onclick="approvePane('${target}','n')">拒否</button>
+         </div>`;
 
-  for (const req of (data.pending || [])) {
     html += `<div class="approval-card">
-      <h3>Pending Approval</h3>
-      <p style="margin:8px 0;font-size:14px">${escapeHtml(req.summary || '')}</p>
-      <p style="margin:4px 0;font-size:12px;color:var(--text-dim)">
-        ${escapeHtml(req.details || '')}
-      </p>
-      <p style="margin:4px 0;font-size:11px;color:var(--text-dim)">
-        ID: ${escapeHtml(req.request_id || '')} | ${escapeHtml(req.requested_at || '')}
-      </p>
-      <div class="btn-row" style="margin-top:12px">
-        <button class="btn btn-success" onclick="handleApproval('${escapeHtml(req.request_id)}', 'approve')">
-          Approve
-        </button>
-        <button class="btn btn-danger" onclick="handleApproval('${escapeHtml(req.request_id)}', 'reject')">
-          Reject
-        </button>
-      </div>
+      <h3>許可リクエスト</h3>
+      <div class="approval-agent">${escapeHtml(item.agent || '')} (${target})</div>
+      ${item.tool ? `<div class="approval-tool">${escapeHtml(item.tool)}</div>` : ''}
+      <div class="approval-snippet">${escapeHtml(item.snippet || '')}</div>
+      ${btns}
     </div>`;
   }
-
-  for (const req of (data.history || [])) {
-    const decision = req.response?.decision || 'unknown';
-    const decisionColor = decision === 'approved' ? 'var(--success)' : 'var(--danger)';
-    html += `<div class="card">
-      <h3>Resolved</h3>
-      <p style="margin:4px 0;font-size:14px">${escapeHtml(req.summary || '')}</p>
-      <p style="margin:4px 0;font-size:12px;color:${decisionColor}">
-        ${decision === 'approved' ? 'Approved' : 'Rejected'}
-        at ${escapeHtml(req.response?.decided_at || '')}
-      </p>
-    </div>`;
-  }
-
   container.innerHTML = html;
 }
 
@@ -604,18 +623,24 @@ async function submitTask() {
   btn.disabled = false;
 }
 
-async function handleApproval(requestId, action) {
+async function approvePane(target, decision) {
+  const labelMap = { y: '許可', n: '拒否', a: '常に許可', N: '常に拒否' };
   try {
-    const resp = await apiFetch(`/api/approvals/${requestId}/${action}`, {
+    const resp = await apiFetch('/api/approve-pane', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`
-      }
+      },
+      body: JSON.stringify({ target, decision })
     });
     const data = await resp.json();
-    showToast(`${action === 'approve' ? 'Approved' : 'Rejected'}: ${requestId}`);
-    refreshAll();
+    if (data.status === 'ok') {
+      showToast(`${labelMap[decision] || decision}: ${target}`);
+      setTimeout(refreshApprovals, 800);
+    } else {
+      showToast('Error: ' + (data.message || 'Unknown error'));
+    }
   } catch (e) {
     showToast('Error: ' + e.message);
   }
