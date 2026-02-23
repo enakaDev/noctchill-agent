@@ -27,29 +27,39 @@
 
 ```
 noctchill-agent/
-├── instructions/          # エージェント用指示書（テンプレート）
+├── instructions/          # エージェント用指示書
 │   ├── producer.md       # プロデューサーの役割定義
 │   ├── asakura.md        # 浅倉 透の役割定義
 │   ├── higuchi.md        # 樋口 円香の役割定義
 │   ├── fukumaru.md       # 福丸 小糸の役割定義
 │   └── ichikawa.md       # 市川 雛菜の役割定義
-├── instructions_compiled/ # コンパイル済み指示書（実際に使用）
-│   └── （compile_instructions.sh で生成）
+├── scripts/              # セットアップ・起動スクリプト
+│   ├── start.sh          # tmux セッション起動
+│   ├── launch_agents.sh  # エージェント一括起動
+│   ├── setup.sh          # 環境セットアップ
+│   ├── compile_instructions.sh  # コミュ反映スクリプト
+│   ├── token_counter.sh  # トークン使用量計測
+│   ├── send_task.sh      # タスク送信ヘルパー
+│   └── prompts/          # Claude Code 用システムプロンプト
+├── config/               # 設定ファイル
+│   └── character_profiles.json  # キャラクタープロファイル
+├── instances/            # インスタンス管理（実行時に自動生成）
+│   └── <name>/
+│       ├── queue/        # タスク・報告ファイル
+│       │   ├── task_input.yaml  # ユーザー → プロデューサー指示
+│       │   ├── tasks/    # 各アイドル用タスクファイル
+│       │   └── reports/  # 各アイドルからの報告
+│       └── status/
+│           └── dashboard.md  # ダッシュボード
 ├── commu/                # 原作コミュ文字起こし
 │   ├── noctchill/        # ノクチル全員登場コミュ
 │   ├── asakura/          # 浅倉透メインのコミュ
 │   ├── higuchi/          # 樋口円香メインのコミュ
 │   ├── fukumaru/         # 福丸小糸メインのコミュ
 │   └── ichikawa/         # 市川雛菜メインのコミュ
-├── queue/                # タスク・報告ファイル
-│   ├── task_input.yaml           # ユーザー → プロデューサー指示
-│   ├── tasks/            # 各アイドル用タスクファイル
-│   └── reports/          # 各アイドルからの報告
-├── status/               # システム状態
-│   └── dashboard.md      # ダッシュボード
-├── scripts/              # セットアップ・起動スクリプト
-│   └── compile_instructions.sh  # コミュ反映スクリプト
-└── README.md            # このファイル
+├── .claude/skills/       # Claude Code スキル定義
+├── tests/                # テストケース
+└── README.md             # このファイル
 ```
 
 ## 🚀 クイックスタート
@@ -59,13 +69,13 @@ noctchill-agent/
 - WSL2 + Ubuntu（またはLinux/macOS）
 - Claude Code がインストール済み
 - tmux がインストール済み
-- Node.js 16+ （Web ダッシュボード用）
+- jq がインストール済み（コミュ分析に使用）
 
 ### セットアップ
 
 ```bash
 # 1. クローンまたはディレクトリに移動
-cd /home/shoot/work/noctchill-agent
+cd <your-clone-directory>
 
 # 2. 初期化スクリプト実行
 bash scripts/setup.sh
@@ -98,7 +108,7 @@ bash scripts/compile_instructions.sh
 
 ### ステップ1：ユーザーが指示を出す
 
-`queue/task_input.yaml` にタスク情報を書き込みます：
+`instances/<name>/queue/task_input.yaml` にタスク情報を書き込みます：
 
 ```yaml
 task_id: "dev_001"
@@ -116,7 +126,7 @@ description: |
 
 ### ステップ3：プロデューサーがタスクを分配
 
-タスクを分析し、各アイドル用のファイルを `queue/tasks/` に作成します：
+タスクを分析し、各アイドル用のファイルを `instances/<name>/queue/tasks/` に作成します：
 
 - `asakura.yaml`
 - `higuchi.yaml`
@@ -129,11 +139,11 @@ description: |
 
 ### ステップ5：完了報告
 
-各アイドルが `queue/reports/` に報告ファイルを作成します。
+各アイドルが `instances/<name>/queue/reports/` に報告ファイルを作成します。
 
 ### ステップ6：ダッシュボード更新
 
-プロデューサーが `status/dashboard.md` を更新し、進捗をリアルタイム表示します。
+プロデューサーが `instances/<name>/status/dashboard.md` を更新し、進捗をリアルタイム表示します。
 
 ## 🎨 キャスト紹介
 
@@ -163,7 +173,7 @@ description: |
 
 ## 📊 ダッシュボード
 
-`status/dashboard.md` をVSCode で Markdown プレビュー表示すると、リアルタイムで進捗が可視化されます。
+`instances/<name>/status/dashboard.md` をVSCode で Markdown プレビュー表示すると、リアルタイムで進捗が可視化されます。
 
 ```markdown
 ## 現在のタスク
@@ -215,21 +225,10 @@ tmux send-keys -t multiagent:0.0 "メッセージ"
 tmux send-keys -t multiagent:0.0 Enter
 ```
 
-## 🛠️ 実装ロードマップ
-
-- [x] 基本ディレクトリ構造作成
-- [x] 指示書（instructions）作成
-- [ ] tmux セットアップスクリプト
-- [ ] プロデューサー Claude Code プロンプト
-- [ ] 4人のアイドル Claude Code プロンプト
-- [ ] ダッシュボード自動更新機能
-- [ ] Web ダッシュボード（スマホ対応）
-- [ ] テスト・バグフィックス
-
 ## 📝 ライセンス
 
 このプロジェクトは個人学習・開発用です。
 
 ---
 
-**準備完了！ユーザーの皆さん、プロジェクト開始準備ができました！**
+**Phase 1〜3 完了済み。**
