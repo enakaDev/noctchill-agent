@@ -255,13 +255,6 @@
   }
   .toast.show { display: block; }
 
-  /* Auto-refresh indicator */
-  .refresh-indicator {
-    font-size: 11px;
-    color: var(--text-dim);
-    text-align: center;
-    padding: 8px;
-  }
 </style>
 </head>
 <body>
@@ -281,10 +274,13 @@
 <!-- Header -->
 <div class="header">
   <h1>noctchill</h1>
-  <span id="sessionStatus" class="status-badge inactive">
-    <span class="status-dot"></span>
-    <span>offline</span>
-  </span>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="sessionStatus" class="status-badge inactive">
+      <span class="status-dot"></span>
+      <span>offline</span>
+    </span>
+    <button onclick="refreshAll()" id="refreshBtn" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:12px;font-size:12px;cursor:pointer;">更新</button>
+  </div>
 </div>
 
 <!-- Tabs -->
@@ -312,9 +308,6 @@
   <div class="card">
     <h3>Dashboard</h3>
     <div id="dashboardContent" class="card-content">Loading...</div>
-  </div>
-  <div class="refresh-indicator">
-    Auto-refresh: <span id="countdown">10</span>s
   </div>
 </div>
 
@@ -379,8 +372,6 @@ const STATUS_MAP = {
 };
 
 let authToken = localStorage.getItem('noctchill_token') || '';
-let refreshInterval = null;
-let countdownValue = 10;
 
 // --- Auth ---
 function checkAuth() {
@@ -442,7 +433,6 @@ async function refreshAll() {
     refreshReports(),
     refreshApprovals()
   ]);
-  countdownValue = 10;
 }
 
 async function refreshStatus() {
@@ -671,14 +661,6 @@ if (API_TOKEN) {
   refreshAll();
 }
 
-// Auto-refresh
-refreshInterval = setInterval(() => {
-  countdownValue--;
-  document.getElementById('countdown').textContent = countdownValue;
-  if (countdownValue <= 0) {
-    refreshAll();
-  }
-}, 1000);
 </script>
 </body>
 </html>
