@@ -94,4 +94,12 @@ echo ""
 tmux send-keys -t "$SESSION_NAME:0" "[TASK] 新しいタスクが届きました。$TASK_FILE を確認してください。"
 tmux send-keys -t "$SESSION_NAME:0" Enter
 
+# ntfy 通知（設定されている場合）
+TASK_CMD=$(grep -m1 'command:' "$TASK_FILE" 2>/dev/null | sed 's/command: *//' | tr -d '"')
+bash "$PROJECT_ROOT/scripts/notify.sh" \
+    "タスク送信" \
+    "[$INSTANCE_NAME] $TASK_CMD" \
+    "default" \
+    "inbox_tray"
+
 echo "プロデューサーに通知しました"

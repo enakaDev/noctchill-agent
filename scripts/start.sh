@@ -8,6 +8,7 @@ CALLER_DIR="$(pwd)"
 TARGET_DIR=""
 INSTANCE_NAME=""
 WITH_AGENTS=true
+WITH_WEB=true
 RUN_SETUP=false
 
 # オプション解析
@@ -24,6 +25,10 @@ while [[ "$1" =~ ^-- ]]; do
         --instance)
             INSTANCE_NAME="$2"
             shift 2
+            ;;
+        --no-web)
+            WITH_WEB=false
+            shift
             ;;
         --setup)
             RUN_SETUP=true
@@ -72,7 +77,7 @@ SESSION_NAME="noctchill-$INSTANCE_NAME"
 # インスタンスディレクトリの作成（テンプレートからコピー）
 if [ ! -d "$QUEUE_DIR" ]; then
     echo "インスタンス '$INSTANCE_NAME' を初期化中..."
-    mkdir -p "$QUEUE_DIR"/{tasks,reports}
+    mkdir -p "$QUEUE_DIR"/{tasks,reports,approvals}
     mkdir -p "$STATUS_DIR"
     if [ -f "$PROJECT_ROOT/instances/template/queue/task_input.yaml" ]; then
         cp "$PROJECT_ROOT/instances/template/queue/task_input.yaml" "$QUEUE_DIR/"
@@ -137,10 +142,31 @@ tmux select-window -t "$SESSION_NAME:0"
 
 echo "tmux セッション '$SESSION_NAME' を作成しました"
 echo ""
+
+# 4. Window 3: Web ダッシュボードサーバー（オプション）
+if [ "$WITH_WEB" = true ] && [ -f "$PROJECT_ROOT/web/server.py" ]; then
+    tmux new-window -t "$SESSION_NAME:3" -n "web" -c "$PROJECT_ROOT"
+    tmux send-keys -t "$SESSION_NAME:3" "bash $PROJECT_ROOT/scripts/start_web.sh $INSTANCE_NAME" Enter
+fi
+
+# 通知ウォッチャー起動（ntfy設定がある場合）
+if [ -f "$PROJECT_ROOT/config/ntfy.conf" ]; then
+    bash "$PROJECT_ROOT/scripts/watch_notifications.sh" "$INSTANCE_NAME" &
+    WATCHER_PID=$!
+    echo "通知ウォッチャー起動 (PID: $WATCHER_PID)"
+fi
+
+# プロデューサー画面に戻る
+tmux select-window -t "$SESSION_NAME:0"
+
+echo ""
 echo "ウィンドウ構成："
 echo "  0: producer   - プロデューサー Claude Code（直接操作）"
 echo "  1: dashboard  - ダッシュボード表示（自動更新）"
 echo "  2: idols      - 4人のアイドル（4ペイン分割）"
+if [ "$WITH_WEB" = true ] && [ -f "$PROJECT_ROOT/web/server.py" ]; then
+    echo "  3: web        - Web ダッシュボード (http://0.0.0.0:5000)"
+fi
 echo ""
 
 # エージェント自動起動（デフォルト）

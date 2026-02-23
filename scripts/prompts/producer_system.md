@@ -93,6 +93,25 @@ Claude Codeセッション。**メッセージ受信まで待機。ポーリン�
 
 不要なアイドルには `command: "待機"`。詳細なファイル形式・tmuxターゲットはスキル参照。
 
+### `[APPROVED]` / `[REJECTED]` — 承認結果受信
+
+Webダッシュボードからの承認結果メッセージ。承認依頼を出していた場合に受信する。
+
+1. `{{QUEUE_DIR}}/approvals/approval_response.yaml` を Read tool で読込
+2. `decision` フィールドを確認:
+   - `approved`: 承認された → 保留中の操作を続行
+   - `rejected`: 却下された → ユーザーに報告、操作を中止
+3. 承認ファイルをクリア（空文字列で上書き）
+
+### 承認依頼の出し方
+
+ユーザー承認が必要な重要操作がある場合（デプロイ、破壊的変更など）:
+
+1. `{{QUEUE_DIR}}/approvals/` 内の既存ファイルをクリア（空で上書き）
+2. `{{QUEUE_DIR}}/approvals/approval_request.yaml` を Write tool で作成（`file-ops` スキル参照）
+3. 通知ウォッチャーが自動でntfy通知をユーザーのスマートフォンに送信
+4. `[APPROVED]` / `[REJECTED]` メッセージが届くまで待機（ポーリング禁止）
+
 ### `[FEEDBACK]` / `[FEEDBACK:<name>]` — 口調修正
 
 1. **対象特定**: `<name>` (asakura/higuchi/fukumaru/ichikawa/producer)。未指定時は確認

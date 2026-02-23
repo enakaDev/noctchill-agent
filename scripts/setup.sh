@@ -31,6 +31,29 @@ else
     echo "[OK] Claude Code"
 fi
 
+# Python3 チェック（Web ダッシュボード用）
+if ! command -v python3 &> /dev/null; then
+    echo "[WARN] python3 がインストールされていません（Web ダッシュボードに必要）"
+    echo "Ubuntu: sudo apt-get install python3 python3-pip"
+else
+    echo "[OK] python3"
+    # Flask / PyYAML チェック
+    if ! python3 -c "import flask" 2>/dev/null; then
+        echo "[WARN] Flask がインストールされていません（Web ダッシュボードに必要）"
+        echo "インストール: pip install flask pyyaml"
+    else
+        echo "[OK] flask"
+    fi
+fi
+
+# inotifywait チェック（通知ウォッチャー用）
+if ! command -v inotifywait &> /dev/null; then
+    echo "[WARN] inotifywait がインストールされていません（ntfy通知ウォッチャーに必要）"
+    echo "Ubuntu: sudo apt-get install inotify-tools"
+else
+    echo "[OK] inotifywait"
+fi
+
 # ディレクトリ確認
 echo ""
 echo "ディレクトリ構造の確認中..."
@@ -193,15 +216,46 @@ else
     echo '}'
 fi
 
+# ntfy 設定ファイルの生成（存在しない場合）
+echo ""
+echo "通知設定の初期化..."
+
+NTFY_CONF="$PROJECT_ROOT/config/ntfy.conf"
+if [ ! -f "$NTFY_CONF" ]; then
+    mkdir -p "$PROJECT_ROOT/config"
+    cp "$PROJECT_ROOT/config/ntfy.conf.example" "$NTFY_CONF"
+    echo "[OK] config/ntfy.conf を作成しました（設定が必要です）"
+else
+    echo "[OK] config/ntfy.conf 既存"
+fi
+
+# Web API トークンの生成（存在しない場合）
+WEB_TOKEN_FILE="$PROJECT_ROOT/config/web_token"
+if [ ! -f "$WEB_TOKEN_FILE" ]; then
+    if command -v python3 &> /dev/null; then
+        python3 -c "import secrets; print(secrets.token_urlsafe(32))" > "$WEB_TOKEN_FILE"
+        echo "[OK] config/web_token を生成しました"
+    else
+        echo "[WARN] python3 がないため config/web_token を生成できません"
+        echo "手動で以下を実行してください:"
+        echo "  openssl rand -base64 32 > $WEB_TOKEN_FILE"
+    fi
+else
+    echo "[OK] config/web_token 既存"
+fi
+
 echo ""
 echo "セットアップ完了！"
 echo ""
 echo "次のステップ："
-echo "  1. 対象リポジトリで起動（エージェント自動起動）"
+echo "  1. config/ntfy.conf を編集して ntfy トピックを設定"
+echo "     NTFY_TOPIC に UUID などのユニークな文字列を設定してください"
+echo "  2. スマートフォンに ntfy アプリをインストール"
+echo "     Android/iOS: ntfy.sh アプリをダウンロードし、同じトピックを登録"
+echo "  3. Tailscale のセットアップ（リモートアクセス用）"
+echo "     WSL2: curl -fsSL https://tailscale.com/install.sh | sh"
+echo "  4. 対象リポジトリで起動"
 echo "     cd /path/to/your/project && bash $PROJECT_ROOT/scripts/start.sh"
-echo "  2. --target オプションで対象リポジトリを指定"
-echo "     bash scripts/start.sh --target /path/to/your/project"
-echo "  3. エージェントなしで起動する場合"
-echo "     bash scripts/start.sh --no-agents"
+echo "     ブラウザで http://localhost:5000 を開くと Web ダッシュボードが表示されます"
 echo ""
 echo "詳細は README.md を参照してください。"

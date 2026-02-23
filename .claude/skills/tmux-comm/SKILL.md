@@ -89,7 +89,15 @@ tmux send-keys -t {{SESSION_NAME}}:2.0 "[UPDATE] instructions が更新されま
 tmux send-keys -t {{SESSION_NAME}}:2.0 Enter
 ```
 
-### 4. 終了処理（プロデューサー → 全アイドル）
+### 4. 承認依頼（プロデューサー → ユーザー）
+
+```bash
+# 承認リクエストファイルを {{QUEUE_DIR}}/approvals/approval_request.yaml に Write tool で作成
+# 通知ウォッチャーが自動でntfy通知を送信するため、tmux send-keys は不要
+# ユーザーがWebダッシュボードで承認すると、[APPROVED] メッセージがプロデューサーに送信される
+```
+
+### 5. 終了処理（プロデューサー → 全アイドル）
 
 ```bash
 # 全アイドルに /exit コマンド送信
@@ -164,6 +172,19 @@ tmux send-keys -t {{SESSION_NAME}}:0 "[REPORT:fukumaru] 完了"
 - 送信者: ユーザー
 - 受信者: プロデューサー
 - トリガー: ユーザーが口調に違和感を覚えた時
+
+### `[APPROVAL]` - 承認依頼
+- 送信者: プロデューサー（ファイル作成）
+- 受信者: ユーザー（ntfy通知 + Webダッシュボード経由）
+- トリガー: ユーザー承認が必要な操作がある時
+- ファイル: `{{QUEUE_DIR}}/approvals/approval_request.yaml` に承認リクエストを書き込む
+- 通知ウォッチャーがファイルを検知し、ntfy通知を自動送信
+
+### `[APPROVED]` / `[REJECTED]` - 承認結果
+- 送信者: Webダッシュボード（自動送信）
+- 受信者: プロデューサー
+- トリガー: ユーザーがWebダッシュボードで承認/却下した時
+- プロデューサーはこのメッセージ受信後、承認結果に応じて処理を継続
 
 ### `[SHUTDOWN]` - システム終了
 - 送信者: ユーザー

@@ -22,11 +22,14 @@ description: ファイル操作パターンスキル。ノクチルシステム�
 │   ├── higuchi.yaml
 │   ├── fukumaru.yaml
 │   └── ichikawa.yaml
-└── reports/              # レポートファイル
-    ├── asakura_report.yaml
-    ├── higuchi_report.yaml
-    ├── fukumaru_report.yaml
-    └── ichikawa_report.yaml
+├── reports/              # レポートファイル
+│   ├── asakura_report.yaml
+│   ├── higuchi_report.yaml
+│   ├── fukumaru_report.yaml
+│   └── ichikawa_report.yaml
+└── approvals/            # 承認リクエスト/レスポンス
+    ├── approval_request.yaml   # プロデューサーが作成
+    └── approval_response.yaml  # Webダッシュボードが作成
 
 {{STATUS_DIR}}/           # ステータス
 └── dashboard.md
@@ -102,6 +105,48 @@ description: ファイル操作パターンスキル。ノクチルシステム�
 ```bash
 # Write tool
 {{QUEUE_DIR}}/reports/asakura_report.yaml  # 透の例
+```
+
+### 9. 承認リクエスト作成（プロデューサー）
+
+```bash
+# Write tool
+{{QUEUE_DIR}}/approvals/approval_request.yaml
+```
+
+承認リクエスト YAML フォーマット:
+```yaml
+request_id: "approval_001"
+task_id: "task_001"
+type: "task_execution"  # task_execution / deployment / high_risk_change
+summary: "承認が必要な操作の概要"
+details: |
+  詳細な説明
+requested_at: "YYYY-MM-DD HH:MM:SS"
+status: "pending"
+```
+
+### 10. 承認レスポンス確認（プロデューサー）
+
+```bash
+# Read tool - [APPROVED] / [REJECTED] メッセージ受信後に確認
+{{QUEUE_DIR}}/approvals/approval_response.yaml
+```
+
+承認レスポンス YAML フォーマット:
+```yaml
+request_id: "approval_001"
+decision: "approved"  # approved / rejected
+decided_at: "YYYY-MM-DD HH:MM:SS"
+decided_by: "web_dashboard"
+```
+
+### 11. 承認ファイルクリア（次の承認依頼前）
+
+```bash
+# Write tool で空ファイルに上書き
+{{QUEUE_DIR}}/approvals/approval_request.yaml
+{{QUEUE_DIR}}/approvals/approval_response.yaml
 ```
 
 ## ツール使用の承認ポリシー

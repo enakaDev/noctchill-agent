@@ -1,3 +1,7 @@
 # Exclude all instance-specific data, but keep the template
 instances/*/
 !instances/template/
+
+# 通知・Web設定（機密情報）
+config/ntfy.conf
+config/web_token

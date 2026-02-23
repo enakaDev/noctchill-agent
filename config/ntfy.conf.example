@@ -1,0 +1,17 @@
+# noctchill-agent ntfy 通知設定
+# このファイルを config/ntfy.conf にコピーして編集してください
+# config/ntfy.conf は .gitignore で除外されます
+
+# ntfy サーバー URL
+NTFY_URL="https://ntfy.sh"
+
+# トピック名（ユニークな文字列を設定）
+# 生成例: python3 -c "import uuid; print(f'noctchill-{uuid.uuid4().hex[:8]}')"
+NTFY_TOPIC=""
+
+# ntfy アクセストークン（オプション）
+NTFY_TOKEN=""
+
+# Web ダッシュボード URL（通知クリック時の遷移先）
+# Tailscale 使用時の例: http://<hostname>:5000
+DASHBOARD_URL=""
